@@ -88,9 +88,9 @@ export default function RecentFiles() {
     return (
       <section className="mb-12">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-3xl font-bold text-foreground">Recent Files</h3>
+          <h3 className="text-3xl font-bold text-white">Recent Files</h3>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-card rounded-xl shadow-lg border border-border p-6 backdrop-blur-lg">
           <div className="animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center space-x-4">
@@ -111,7 +111,7 @@ export default function RecentFiles() {
     <section className="mb-12">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-bold text-slate-900">Recent Files</h3>
-        <Button variant="ghost" className="text-primary hover:text-blue-700 font-medium">
+        <Button variant="ghost" className="text-blue-400 hover:text-blue-300 font-medium">
           View All
         </Button>
       </div>
@@ -123,8 +123,8 @@ export default function RecentFiles() {
               <div className="bg-muted p-4 rounded-lg inline-block mb-4">
                 <i className="fas fa-file-pdf text-3xl text-muted-foreground"></i>
               </div>
-              <h4 className="text-lg font-semibold text-foreground mb-2">No files yet</h4>
-              <p className="text-muted-foreground">Upload your first PDF to get started</p>
+              <h4 className="text-lg font-semibold text-white mb-2">No files yet</h4>
+              <p className="text-gray-300">Upload your first PDF to get started</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -135,28 +135,28 @@ export default function RecentFiles() {
                       <i className="fas fa-file-pdf"></i>
                     </div>
                     <div>
-                      <h4 className="font-medium text-foreground">{file.originalName}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <h4 className="font-medium text-white">{file.originalName}</h4>
+                      <p className="text-sm text-gray-300">
                         Modified {formatDistanceToNow(new Date(file.lastModified), { addSuffix: true })} • {formatFileSize(file.fileSize)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button 
-                      className="text-muted-foreground hover:text-blue-400 p-2 transition-colors rounded-lg hover:bg-muted"
+                      className="text-gray-400 hover:text-blue-400 p-2 transition-colors rounded-lg hover:bg-muted"
                       onClick={() => handleDownload(file)}
                       title="Download"
                     >
                       <i className="fas fa-download"></i>
                     </button>
                     <button 
-                      className="text-muted-foreground hover:text-green-400 p-2 transition-colors rounded-lg hover:bg-muted"
+                      className="text-gray-400 hover:text-green-400 p-2 transition-colors rounded-lg hover:bg-muted"
                       title="Share"
                     >
                       <i className="fas fa-share-alt"></i>
                     </button>
                     <button 
-                      className="text-muted-foreground hover:text-red-400 p-2 transition-colors rounded-lg hover:bg-muted"
+                      className="text-gray-400 hover:text-red-400 p-2 transition-colors rounded-lg hover:bg-muted"
                       onClick={() => handleDelete(file)}
                       title="Delete"
                     >

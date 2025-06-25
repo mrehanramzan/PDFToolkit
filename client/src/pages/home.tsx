@@ -6,7 +6,7 @@ import RecentFiles from "@/components/recent-files";
 import Footer from "@/components/footer";
 import LoadingOverlay from "@/components/loading-overlay";
 import FeatureShowcase from "@/components/feature-showcase";
-import Testimonials from "@/components/testimonials";
+
 
 export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -24,10 +24,10 @@ export default function Home() {
             <div className="absolute top-1/3 right-1/4 w-40 h-40 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-xl animate-pulse delay-1000"></div>
             <div className="absolute bottom-1/4 left-1/3 w-36 h-36 bg-gradient-to-r from-pink-500/20 to-blue-500/20 rounded-full blur-xl animate-pulse delay-2000"></div>
           </div>
-          <h2 className="text-5xl font-bold text-foreground mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Professional PDF Editor
           </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Transform, edit, and manage your PDF documents with enterprise-grade tools and lightning-fast performance
           </p>
           
@@ -48,9 +48,6 @@ export default function Home() {
 
         {/* Recent Files */}
         <RecentFiles />
-
-        {/* Testimonials */}
-        <Testimonials />
 
         {/* Features Highlight */}
         <section className="mb-12">

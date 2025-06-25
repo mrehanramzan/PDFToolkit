@@ -221,7 +221,7 @@ export default function ToolsGrid() {
     <>
       {/* Core Tools */}
       <section className="mb-12">
-        <h3 className="text-3xl font-bold text-foreground mb-8 text-center">
+        <h3 className="text-3xl font-bold text-white mb-8 text-center">
           PDF Tools & Features
         </h3>
         
@@ -246,7 +246,7 @@ export default function ToolsGrid() {
 
       {/* Advanced Tools */}
       <section className="mb-12">
-        <h3 className="text-3xl font-bold text-foreground mb-8 text-center">
+        <h3 className="text-3xl font-bold text-white mb-8 text-center">
           Advanced Features
         </h3>
         

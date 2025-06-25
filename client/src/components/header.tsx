@@ -10,25 +10,25 @@ export default function Header() {
               <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-2 rounded-lg shadow-lg">
                 <i className="fas fa-file-pdf text-xl"></i>
               </div>
-              <h1 className="text-xl font-bold text-foreground">DocuCraft</h1>
+              <h1 className="text-xl font-bold text-white">DocuCraft</h1>
             </div>
             <nav className="hidden md:flex space-x-6">
-              <a href="#" className="text-muted-foreground hover:text-primary font-medium transition-colors">
+              <a href="#" className="text-gray-300 hover:text-primary font-medium transition-colors">
                 Tools
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary font-medium transition-colors">
+              <a href="#" className="text-gray-300 hover:text-primary font-medium transition-colors">
                 Templates
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary font-medium transition-colors">
+              <a href="#" className="text-gray-300 hover:text-primary font-medium transition-colors">
                 Pricing
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary font-medium transition-colors">
+              <a href="#" className="text-gray-300 hover:text-primary font-medium transition-colors">
                 Help
               </a>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
-            <button className="text-muted-foreground hover:text-primary transition-colors">
+            <button className="text-gray-300 hover:text-primary transition-colors">
               <i className="fas fa-bell"></i>
             </button>
             <Button className="gradient-button text-white font-medium shadow-lg">

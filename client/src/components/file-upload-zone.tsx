@@ -110,10 +110,10 @@ export default function FileUploadZone({
             <i className="fas fa-cloud-upload-alt text-4xl"></i>
           </div>
         </div>
-        <h3 className="text-2xl font-semibold text-foreground mb-2">
+        <h3 className="text-2xl font-semibold text-white mb-2">
           {isDragActive ? 'Drop your PDF here' : 'Drop your PDF files here'}
         </h3>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-gray-300 mb-6">
           or click to browse from your device
         </p>
         <Button 
@@ -123,7 +123,7 @@ export default function FileUploadZone({
           <i className="fas fa-plus mr-2"></i>
           {isUploading ? 'Uploading...' : 'Select Files'}
         </Button>
-        <p className="text-sm text-muted-foreground mt-6">
+        <p className="text-sm text-gray-300 mt-6">
           Supports PDF files up to 100MB • <span className="text-green-400">Secure & Private</span>
         </p>
       </div>

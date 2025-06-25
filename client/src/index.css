@@ -8,23 +8,23 @@
 :root {
   /* Dark Theme - Primary Colors */
   --background: hsl(222, 84%, 4.9%);
-  --foreground: hsl(210, 40%, 98%);
+  --foreground: hsl(0, 0%, 95%);
   --muted: hsl(217, 32%, 17%);
-  --muted-foreground: hsl(215, 20%, 65%);
+  --muted-foreground: hsl(215, 20%, 75%);
   --popover: hsl(222, 84%, 4.9%);
-  --popover-foreground: hsl(210, 40%, 98%);
+  --popover-foreground: hsl(0, 0%, 95%);
   --card: hsl(220, 13%, 9%);
-  --card-foreground: hsl(210, 40%, 98%);
+  --card-foreground: hsl(0, 0%, 95%);
   --border: hsl(217, 32%, 17%);
   --input: hsl(217, 32%, 17%);
   --primary: hsl(222, 100%, 57%);
-  --primary-foreground: hsl(222, 84%, 4.9%);
+  --primary-foreground: hsl(0, 0%, 95%);
   --secondary: hsl(217, 32%, 17%);
-  --secondary-foreground: hsl(210, 40%, 98%);
+  --secondary-foreground: hsl(0, 0%, 95%);
   --accent: hsl(217, 32%, 17%);
-  --accent-foreground: hsl(210, 40%, 98%);
+  --accent-foreground: hsl(0, 0%, 95%);
   --destructive: hsl(0, 63%, 31%);
-  --destructive-foreground: hsl(210, 40%, 98%);
+  --destructive-foreground: hsl(0, 0%, 95%);
   --ring: hsl(222, 100%, 57%);
   --radius: 0.75rem;
   
