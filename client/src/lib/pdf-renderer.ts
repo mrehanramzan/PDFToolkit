@@ -1,85 +1,134 @@
 import { PDFDocument } from 'pdf-lib';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export class PDFRenderer {
   /**
-   * Convert PDF page to image data URL using pdf-lib and canvas
+   * Convert PDF page to image data URL using PDF.js for actual rendering
    */
   static async convertPdfPageToImage(
+    pdfBytes: Uint8Array, 
+    pageIndex: number = 0,
+    scale: number = 1.5
+  ): Promise<string> {
+    try {
+      // Load PDF with PDF.js
+      const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+      const pdf = await loadingTask.promise;
+      
+      // Get the specific page
+      const page = await pdf.getPage(pageIndex + 1); // PDF.js uses 1-based indexing
+      
+      // Get viewport with scale
+      const viewport = page.getViewport({ scale });
+      
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      if (!context) {
+        throw new Error('Cannot get canvas context');
+      }
+      
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      
+      // Render PDF page to canvas
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+      
+      await page.render(renderContext).promise;
+      
+      // Convert canvas to data URL
+      return canvas.toDataURL('image/png', 1.0);
+      
+    } catch (error) {
+      console.error('Error converting PDF page to image with PDF.js:', error);
+      
+      // Fallback to placeholder if PDF.js fails
+      return this.createPagePlaceholder(600, 800, pageIndex + 1, scale);
+    }
+  }
+  
+  /**
+   * Convert PDF document to image using pdf-lib (fallback method)
+   */
+  static async convertPdfDocToImage(
     pdfDoc: PDFDocument, 
     pageIndex: number = 0,
     scale: number = 1.5
   ): Promise<string> {
     try {
-      // Get the page
+      // Get PDF bytes first
+      const pdfBytes = await pdfDoc.save();
+      
+      // Use PDF.js method
+      return await this.convertPdfPageToImage(pdfBytes, pageIndex, scale);
+      
+    } catch (error) {
+      console.error('Error converting PDF document to image:', error);
+      
+      // Get page dimensions from pdf-lib
       const page = pdfDoc.getPage(pageIndex);
       const { width, height } = page.getSize();
       
-      // Create a new PDF with just this page for rendering
-      const singlePagePdf = await PDFDocument.create();
-      const [copiedPage] = await singlePagePdf.copyPages(pdfDoc, [pageIndex]);
-      singlePagePdf.addPage(copiedPage);
-      
-      // Convert to bytes
-      const pdfBytes = await singlePagePdf.save();
-      
-      // Create blob URL for the single page PDF
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      
-      // Create a promise that resolves when PDF is converted to image
-      return new Promise((resolve, reject) => {
-        // Create an off-screen canvas
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Cannot get canvas context'));
-          return;
-        }
-        
-        // Set canvas dimensions
-        canvas.width = width * scale;
-        canvas.height = height * scale;
-        
-        // Fill with white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Add a border to show the page bounds
-        ctx.strokeStyle = '#e5e5e5';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(0, 0, canvas.width, canvas.height);
-        
-        // Add text indicating this is PDF content
-        ctx.fillStyle = '#666666';
-        ctx.font = `${16 * scale}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.fillText(
-          `PDF Page ${pageIndex + 1}`,
-          canvas.width / 2,
-          canvas.height / 2 - 20 * scale
-        );
-        
-        ctx.font = `${12 * scale}px Arial`;
-        ctx.fillText(
-          `${Math.round(width)} x ${Math.round(height)} pts`,
-          canvas.width / 2,
-          canvas.height / 2 + 10 * scale
-        );
-        
-        // Convert canvas to data URL
-        const dataUrl = canvas.toDataURL('image/png', 1.0);
-        
-        // Clean up
-        URL.revokeObjectURL(url);
-        
-        resolve(dataUrl);
-      });
-      
-    } catch (error) {
-      console.error('Error converting PDF page to image:', error);
-      throw error;
+      return this.createPagePlaceholder(width * scale, height * scale, pageIndex + 1, 1);
     }
+  }
+  
+  /**
+   * Create a placeholder when PDF rendering fails
+   */
+  static createPagePlaceholder(
+    width: number,
+    height: number,
+    pageNumber: number,
+    scale: number = 1
+  ): string {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Border
+    ctx.strokeStyle = '#e5e5e5';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    
+    // Placeholder content that looks like a document
+    ctx.fillStyle = '#f8f9fa';
+    const margin = 40 * scale;
+    const lineHeight = 20 * scale;
+    
+    // Title area
+    ctx.fillRect(margin, margin, canvas.width - 2 * margin, 30 * scale);
+    
+    // Content lines
+    for (let i = 0; i < 15; i++) {
+      const lineWidth = (canvas.width - 2 * margin) * (0.7 + Math.random() * 0.3);
+      ctx.fillRect(margin, margin + 80 * scale + i * lineHeight, lineWidth, 12 * scale);
+    }
+    
+    // Page number
+    ctx.fillStyle = '#666666';
+    ctx.font = `${14 * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      `Page ${pageNumber}`,
+      canvas.width / 2,
+      canvas.height - 20 * scale
+    );
+    
+    return canvas.toDataURL('image/png', 1.0);
   }
   
   /**
