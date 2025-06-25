@@ -71,7 +71,10 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     const file = event.target.files?.[0];
     if (!file || !canvas) return;
 
-    if (file.type !== 'application/pdf') {
+    // More flexible file type checking
+    const isValidPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    
+    if (!isValidPDF) {
       toast({
         title: "Invalid File",
         description: "Please select a PDF file",
@@ -84,19 +87,60 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     try {
       const arrayBuffer = await file.arrayBuffer();
       
-      // Load with pdf-lib
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      // Validate that the file is not empty
+      if (arrayBuffer.byteLength === 0) {
+        throw new Error('File is empty');
+      }
+
+      // Add more robust PDF loading with better error handling
+      let pdfDoc: PDFDocument;
+      try {
+        pdfDoc = await PDFDocument.load(arrayBuffer, {
+          ignoreEncryption: true,
+          parseSpeed: 'slow',
+          throwOnInvalidObject: false
+        });
+      } catch (pdfError) {
+        console.error('PDF-lib error:', pdfError);
+        // Try with different options
+        try {
+          pdfDoc = await PDFDocument.load(arrayBuffer, {
+            ignoreEncryption: true,
+            updateMetadata: false,
+            throwOnInvalidObject: false
+          });
+        } catch (secondError) {
+          console.error('Second PDF load attempt failed:', secondError);
+          throw new Error('Unable to parse PDF file. The file may be corrupted or encrypted.');
+        }
+      }
+      
       setPdfDocument(pdfDoc);
       
       const pageCount = pdfDoc.getPageCount();
+      
+      if (pageCount === 0) {
+        throw new Error('PDF has no pages');
+      }
+      
+      // Get actual page dimensions from the first page
+      const firstPage = pdfDoc.getPage(0);
+      const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+      
+      // Scale to fit canvas while maintaining aspect ratio
+      const maxWidth = 800;
+      const maxHeight = 600;
+      const scale = Math.min(maxWidth / pageWidth, maxHeight / pageHeight);
+      const scaledWidth = pageWidth * scale;
+      const scaledHeight = pageHeight * scale;
       
       // Create page representations
       const pdfPages: PdfPage[] = [];
       for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
         pdfPages.push({
           pageNumber: pageNum,
-          width: 800,
-          height: 600
+          width: scaledWidth,
+          height: scaledHeight
         });
       }
       
@@ -104,16 +148,19 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       setCurrentPageIndex(0);
       
       // Set up canvas for editing
-      canvas.setWidth(800);
-      canvas.setHeight(600);
+      canvas.setWidth(scaledWidth);
+      canvas.setHeight(scaledHeight);
       canvas.backgroundColor = '#ffffff';
+      
+      // Clear existing objects
+      canvas.clear();
       
       // Add page background
       const pageRect = new Rect({
         left: 0,
         top: 0,
-        width: 800,
-        height: 600,
+        width: scaledWidth,
+        height: scaledHeight,
         fill: '#ffffff',
         stroke: '#e5e5e5',
         strokeWidth: 1,
@@ -125,7 +172,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       canvas.sendToBack(pageRect);
       
       // Add page indicator
-      const pageText = new IText(`Page ${1} of ${pageCount}`, {
+      const pageText = new IText(`Page 1 of ${pageCount}`, {
         left: 20,
         top: 20,
         fontSize: 12,
@@ -139,14 +186,15 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       canvas.renderAll();
 
       toast({
-        title: "PDF Loaded",
-        description: `Successfully loaded ${pageCount} pages for editing`,
+        title: "PDF Loaded Successfully",
+        description: `Loaded ${pageCount} pages (${Math.round(pageWidth)}x${Math.round(pageHeight)}px)`,
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error Loading PDF",
-        description: "Failed to load PDF file. Please try a different file.",
+        description: `Failed to load PDF: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -163,14 +211,17 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     
     setCurrentPageIndex(pageIndex);
     
+    const currentPage = pages[pageIndex];
+    if (!currentPage) return;
+    
     // Clear canvas and add new page background
     canvas.clear();
     
     const pageRect = new Rect({
       left: 0,
       top: 0,
-      width: 800,
-      height: 600,
+      width: currentPage.width,
+      height: currentPage.height,
       fill: '#ffffff',
       stroke: '#e5e5e5',
       strokeWidth: 1,
@@ -327,17 +378,19 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       // Create a new PDF document
       const newPdfDoc = await PDFDocument.create();
       
-      // Export canvas as image and add to PDF
-      const dataURL = canvas.toDataURL('image/png');
+      // Export canvas as image with higher quality
+      const dataURL = canvas.toDataURL('image/png', 1.0);
       const imageBytes = await fetch(dataURL).then(res => res.arrayBuffer());
       const image = await newPdfDoc.embedPng(imageBytes);
       
-      const page = newPdfDoc.addPage([canvas.width!, canvas.height!]);
+      const { width, height } = image.scale(1);
+      const page = newPdfDoc.addPage([width, height]);
+      
       page.drawImage(image, {
         x: 0,
         y: 0,
-        width: canvas.width!,
-        height: canvas.height!,
+        width: width,
+        height: height,
       });
 
       const pdfBytes = await newPdfDoc.save();
@@ -350,7 +403,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'edited-document.pdf';
+        a.download = `edited-document-${Date.now()}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -358,14 +411,15 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       }
 
       toast({
-        title: "Success",
-        description: "PDF exported successfully",
+        title: "PDF Exported",
+        description: "Your edited PDF has been downloaded successfully",
       });
     } catch (error) {
       console.error('Export error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Export Error",
-        description: "Failed to export PDF",
+        description: `Failed to export PDF: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -670,7 +724,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         </div>
 
         {/* Canvas Container */}
-        <div className="flex-1 bg-slate-900/50 p-4 flex items-center justify-center">
+        <div className="flex-1 bg-slate-900/50 p-4 flex items-center justify-center overflow-auto">
           <div className="bg-white shadow-2xl rounded-lg overflow-hidden">
             <canvas
               ref={canvasRef}
