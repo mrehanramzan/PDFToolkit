@@ -101,6 +101,9 @@ Changelog:
 - June 25, 2025. Implemented dark theme with Poppins font and premium gradient design
 - June 25, 2025. Created PDF processing functionality with merge, split, compress, rotate, watermark features
 - June 25, 2025. Added PDF editor page with routing and client-side PDF processing using pdf-lib
+- June 25, 2025. Enhanced merge PDF functionality with file preview showing page count and size
+- June 25, 2025. Implemented split PDF functionality that creates individual page files
+- June 25, 2025. Added file reordering, removal, and proper validation across all PDF tools
 
 ## User Preferences
 

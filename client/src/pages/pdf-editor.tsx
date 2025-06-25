@@ -118,9 +118,34 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          result = await PDFUtils.splitPDF(files[0].file);
-          filename = "split.pdf";
-          break;
+          
+          // Split into individual pages by default
+          const splitResults = await PDFUtils.splitPDF(files[0].file, { type: 'pages' });
+          
+          // Download each split PDF
+          splitResults.forEach((pdfBytes, index) => {
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${files[0].file.name.replace('.pdf', '')}_page_${index + 1}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+          
+          toast({
+            title: "Success!",
+            description: `PDF split into ${splitResults.length} files. Check your downloads.`,
+          });
+          
+          setProgress(100);
+          setTimeout(() => {
+            setIsProcessing(false);
+            setProgress(0);
+          }, 1000);
+          return;
 
         case 'compress':
           if (files.length !== 1) {
@@ -302,7 +327,8 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             <i className={`${toolInfo.icon} text-4xl`}></i>
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">{toolInfo.title}</h2>
-          <p className="text-xl text-gray-300">{toolInfo.description}</p>
+          <p className="text-xl text-gray-300 mb-2">{toolInfo.description}</p>
+          <p className="text-sm text-gray-400">{toolInfo.instructions}</p>
         </div>
 
         <div className="bg-card rounded-xl shadow-lg border border-border p-8 backdrop-blur-lg">
@@ -319,7 +345,9 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
                     <i className="fas fa-cloud-upload-alt text-3xl"></i>
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">
-                    {tool === 'merge' ? 'Drop multiple PDF files here or click to browse' : 'Drop PDF file here or click to browse'}
+                    {tool === 'merge' ? 'Drop multiple PDF files here or click to browse' : 
+                     tool === 'split' ? 'Drop a PDF file here to split into pages' :
+                     'Drop PDF file here or click to browse'}
                   </h3>
                   <p className="text-gray-300 mb-4">
                     Supports PDF files up to 100MB each
@@ -343,11 +371,18 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold text-white">
-                    {tool === 'merge' ? `Files to Merge (${files.length})` : 'Selected File'}
+                    {tool === 'merge' ? `Files to Merge (${files.length})` : 
+                     tool === 'split' ? `File to Split` :
+                     'Selected File'}
                   </h3>
                   {tool === 'merge' && files.length > 1 && (
                     <span className="text-sm text-gray-400">
-                      Drag to reorder
+                      Use arrows to reorder
+                    </span>
+                  )}
+                  {tool === 'split' && files.length > 0 && files[0].pageCount && (
+                    <span className="text-sm text-gray-400">
+                      Will create {files[0].pageCount} separate files
                     </span>
                   )}
                 </div>
@@ -413,18 +448,25 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
 
             <Button
               onClick={processFiles}
-              disabled={files.length === 0 || isProcessing}
+              disabled={files.length === 0 || isProcessing || 
+                        (tool === 'merge' && files.length < 2) ||
+                        (tool !== 'merge' && files.length !== 1)}
               className="w-full gradient-button text-white font-medium shadow-lg py-3"
             >
               {isProcessing ? (
                 <>
                   <i className="fas fa-spinner fa-spin mr-2"></i>
-                  {tool === 'merge' ? 'Merging PDFs...' : 'Processing...'} {progress}%
+                  {tool === 'merge' ? 'Merging PDFs...' : 
+                   tool === 'split' ? 'Splitting PDF...' : 
+                   tool === 'compress' ? 'Compressing PDF...' : 
+                   tool === 'rotate' ? 'Rotating PDF...' : 
+                   tool === 'watermark' ? 'Adding Watermark...' : 
+                   'Processing...'} {progress}%
                 </>
               ) : (
                 <>
-                  <i className={`fas ${tool === 'merge' ? 'fa-layer-group' : 'fa-magic'} mr-2`}></i>
-                  {tool === 'merge' ? 'Merge PDFs' : 'Process PDF'}
+                  <i className={`fas ${toolInfo.icon.split(' ')[1]} mr-2`}></i>
+                  {toolInfo.title}
                 </>
               )}
             </Button>

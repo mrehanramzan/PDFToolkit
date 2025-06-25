@@ -17,7 +17,7 @@ export class PDFUtils {
     return await mergedPdf.save();
   }
 
-  static async splitPDF(pdfFile: File, pageRanges?: { start: number; end: number }[]): Promise<Uint8Array[]> {
+  static async splitPDF(pdfFile: File, splitOptions?: { type: 'pages' | 'ranges', ranges?: { start: number; end: number }[] }): Promise<Uint8Array[]> {
     const arrayBuffer = await pdfFile.arrayBuffer();
     const sourcePdf = await PDFDocument.load(arrayBuffer);
     const totalPages = sourcePdf.getPageCount();
