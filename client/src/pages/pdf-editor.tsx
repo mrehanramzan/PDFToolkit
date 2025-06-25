@@ -8,17 +8,71 @@ interface PdfEditorProps {
   tool: string;
 }
 
+interface FileWithPreview {
+  file: File;
+  id: string;
+  pageCount?: number;
+  size: string;
+}
+
 export default function PdfEditor({ tool }: PdfEditorProps) {
   const [, setLocation] = useLocation();
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
 
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = Array.from(event.target.files || []);
-    setFiles(uploadedFiles);
+    const filesWithPreview: FileWithPreview[] = [];
+    
+    for (const file of uploadedFiles) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await PDFUtils.loadPDF(arrayBuffer);
+        const pageCount = pdf.getPageCount();
+        
+        filesWithPreview.push({
+          file,
+          id: crypto.randomUUID(),
+          pageCount,
+          size: formatFileSize(file.size)
+        });
+      } catch (error) {
+        filesWithPreview.push({
+          file,
+          id: crypto.randomUUID(),
+          size: formatFileSize(file.size)
+        });
+      }
+    }
+    
+    setFiles(filesWithPreview);
   }, []);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const removeFile = (id: string) => {
+    setFiles(files.filter(f => f.id !== id));
+  };
+
+  const moveFile = (id: string, direction: 'up' | 'down') => {
+    const currentIndex = files.findIndex(f => f.id === id);
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= files.length) return;
+    
+    const newFiles = [...files];
+    [newFiles[currentIndex], newFiles[newIndex]] = [newFiles[newIndex], newFiles[currentIndex]];
+    setFiles(newFiles);
+  };
 
   const processFiles = useCallback(async () => {
     if (files.length === 0) {
@@ -51,8 +105,8 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          result = await PDFUtils.mergePDFs(files);
-          filename = "merged.pdf";
+          result = await PDFUtils.mergePDFs(files.map(f => f.file));
+          filename = `merged_${Date.now()}.pdf`;
           break;
 
         case 'split':
@@ -64,8 +118,7 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          const ranges = [{ start: 1, end: 3 }, { start: 4, end: 6 }]; // Example ranges
-          result = await PDFUtils.splitPDF(files[0], ranges);
+          result = await PDFUtils.splitPDF(files[0].file);
           filename = "split.pdf";
           break;
 
@@ -78,7 +131,7 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          result = await PDFUtils.compressPDF(files[0]);
+          result = await PDFUtils.compressPDF(files[0].file);
           filename = "compressed.pdf";
           break;
 
@@ -91,7 +144,7 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          result = await PDFUtils.rotatePDF(files[0], 90);
+          result = await PDFUtils.rotatePDF(files[0].file, 90);
           filename = "rotated.pdf";
           break;
 
@@ -104,7 +157,7 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          result = await PDFUtils.addWatermark(files[0], "CONFIDENTIAL");
+          result = await PDFUtils.addWatermark(files[0].file, "CONFIDENTIAL");
           filename = "watermarked.pdf";
           break;
 
@@ -117,7 +170,7 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             });
             return;
           }
-          result = await PDFUtils.convertPDFToImages(files[0]);
+          result = await PDFUtils.convertPDFToImages(files[0].file);
           break;
 
         default:
@@ -231,13 +284,13 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
               <Button
                 variant="ghost"
                 onClick={() => setLocation("/")}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-gray-300 hover:text-white"
               >
                 <i className="fas fa-arrow-left mr-2"></i>
                 Back to Home
               </Button>
             </div>
-            <h1 className="text-xl font-bold text-foreground">{toolInfo.title}</h1>
+            <h1 className="text-xl font-bold text-white">{toolInfo.title}</h1>
             <div></div>
           </div>
         </div>
@@ -248,36 +301,110 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
           <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-full inline-block mb-4 shadow-lg">
             <i className={`${toolInfo.icon} text-4xl`}></i>
           </div>
-          <h2 className="text-3xl font-bold text-foreground mb-4">{toolInfo.title}</h2>
-          <p className="text-xl text-muted-foreground">{toolInfo.description}</p>
+          <h2 className="text-3xl font-bold text-white mb-4">{toolInfo.title}</h2>
+          <p className="text-xl text-gray-300">{toolInfo.description}</p>
         </div>
 
         <div className="bg-card rounded-xl shadow-lg border border-border p-8 backdrop-blur-lg">
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Select PDF Files
+              <label className="block text-sm font-medium text-white mb-4">
+                {tool === 'merge' ? 'Select Multiple PDF Files to Merge' : 'Select PDF File'}
+                {tool === 'merge' && files.length > 0 && ` (${files.length} selected)`}
               </label>
-              <input
-                type="file"
-                accept=".pdf"
-                multiple={tool === 'merge'}
-                onChange={handleFileUpload}
-                className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:gradient-button file:text-white file:cursor-pointer cursor-pointer bg-muted rounded-lg border border-border"
-              />
+              
+              <div className="upload-zone">
+                <div className="text-center">
+                  <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-4 rounded-full inline-block mb-4 shadow-lg">
+                    <i className="fas fa-cloud-upload-alt text-3xl"></i>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {tool === 'merge' ? 'Drop multiple PDF files here or click to browse' : 'Drop PDF file here or click to browse'}
+                  </h3>
+                  <p className="text-gray-300 mb-4">
+                    Supports PDF files up to 100MB each
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    multiple={tool === 'merge'}
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <Button className="gradient-button text-white font-medium shadow-lg">
+                    <i className="fas fa-plus mr-2"></i>
+                    Browse Files
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {files.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">Selected Files:</h3>
-                <div className="space-y-2">
-                  {files.map((file, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                      <i className="fas fa-file-pdf text-red-500"></i>
-                      <span className="text-foreground">{file.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                      </span>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-white">
+                    {tool === 'merge' ? `Files to Merge (${files.length})` : 'Selected File'}
+                  </h3>
+                  {tool === 'merge' && files.length > 1 && (
+                    <span className="text-sm text-gray-400">
+                      Drag to reorder
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {files.map((fileWithPreview, index) => (
+                    <div key={fileWithPreview.id} className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-2 rounded-lg">
+                          <i className="fas fa-file-pdf"></i>
+                        </div>
+                        <div>
+                          <span className="text-white font-medium block">
+                            {fileWithPreview.file.name.length > 30 
+                              ? `${fileWithPreview.file.name.substring(0, 25)}...` 
+                              : fileWithPreview.file.name}
+                          </span>
+                          <div className="flex items-center space-x-2 text-sm text-gray-300">
+                            <span>{fileWithPreview.size}</span>
+                            {fileWithPreview.pageCount && (
+                              <>
+                                <span>•</span>
+                                <span>{fileWithPreview.pageCount} pages</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {tool === 'merge' && files.length > 1 && (
+                          <>
+                            <button
+                              onClick={() => moveFile(fileWithPreview.id, 'up')}
+                              disabled={index === 0}
+                              className="text-gray-400 hover:text-white p-1 transition-colors disabled:opacity-50"
+                              title="Move up"
+                            >
+                              <i className="fas fa-chevron-up"></i>
+                            </button>
+                            <button
+                              onClick={() => moveFile(fileWithPreview.id, 'down')}
+                              disabled={index === files.length - 1}
+                              className="text-gray-400 hover:text-white p-1 transition-colors disabled:opacity-50"
+                              title="Move down"
+                            >
+                              <i className="fas fa-chevron-down"></i>
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => removeFile(fileWithPreview.id)}
+                          className="text-gray-400 hover:text-red-400 p-1 transition-colors"
+                          title="Remove file"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -292,12 +419,12 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
               {isProcessing ? (
                 <>
                   <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Processing... {progress}%
+                  {tool === 'merge' ? 'Merging PDFs...' : 'Processing...'} {progress}%
                 </>
               ) : (
                 <>
-                  <i className="fas fa-magic mr-2"></i>
-                  Process PDF
+                  <i className={`fas ${tool === 'merge' ? 'fa-layer-group' : 'fa-magic'} mr-2`}></i>
+                  {tool === 'merge' ? 'Merge PDFs' : 'Process PDF'}
                 </>
               )}
             </Button>

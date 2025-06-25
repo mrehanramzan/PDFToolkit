@@ -1,6 +1,9 @@
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 
 export class PDFUtils {
+  static async loadPDF(arrayBuffer: ArrayBuffer): Promise<PDFDocument> {
+    return await PDFDocument.load(arrayBuffer);
+  }
   static async mergePDFs(pdfFiles: File[]): Promise<Uint8Array> {
     const mergedPdf = await PDFDocument.create();
     
