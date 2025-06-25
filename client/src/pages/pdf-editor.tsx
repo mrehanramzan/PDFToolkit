@@ -15,11 +15,19 @@ interface FileWithPreview {
   size: string;
 }
 
+interface SplitOptions {
+  type: 'pages' | 'ranges' | 'bookmarks';
+  ranges?: { start: number; end: number; name?: string }[];
+  everyNPages?: number;
+}
+
 export default function PdfEditor({ tool }: PdfEditorProps) {
   const [, setLocation] = useLocation();
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [splitOptions, setSplitOptions] = useState<SplitOptions>({ type: 'pages' });
+  const [customRanges, setCustomRanges] = useState<string>('');
   const { toast } = useToast();
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +82,63 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
     setFiles(newFiles);
   };
 
+  const parseRanges = (rangesText: string, maxPages: number): { start: number; end: number; name?: string }[] => {
+    const ranges: { start: number; end: number; name?: string }[] = [];
+    const parts = rangesText.split(',').map(s => s.trim()).filter(s => s);
+    
+    for (const part of parts) {
+      if (part.includes('-')) {
+        const [startStr, endStr] = part.split('-').map(s => s.trim());
+        const start = parseInt(startStr);
+        const end = parseInt(endStr);
+        if (!isNaN(start) && !isNaN(end) && start > 0 && end <= maxPages && start <= end) {
+          ranges.push({ start, end, name: `pages_${start}_to_${end}` });
+        }
+      } else {
+        const page = parseInt(part);
+        if (!isNaN(page) && page > 0 && page <= maxPages) {
+          ranges.push({ start: page, end: page, name: `page_${page}` });
+        }
+      }
+    }
+    
+    return ranges;
+  };
+
+  const downloadAsZip = async (pdfFiles: Uint8Array[], originalName: string, options: SplitOptions) => {
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    
+    const baseName = originalName.replace('.pdf', '');
+    
+    pdfFiles.forEach((pdfBytes, index) => {
+      let fileName = '';
+      
+      if (options.type === 'pages') {
+        fileName = `${baseName}_page_${index + 1}.pdf`;
+      } else if (options.type === 'ranges' && options.ranges) {
+        const range = options.ranges[index];
+        fileName = `${baseName}_${range.name || `range_${index + 1}`}.pdf`;
+      } else if (options.type === 'bookmarks') {
+        fileName = `${baseName}_chapter_${index + 1}.pdf`;
+      } else {
+        fileName = `${baseName}_part_${index + 1}.pdf`;
+      }
+      
+      zip.file(fileName, pdfBytes);
+    });
+    
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${baseName}_split.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const processFiles = useCallback(async () => {
     if (files.length === 0) {
       toast({
@@ -119,25 +184,43 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
             return;
           }
           
-          // Split into individual pages by default
-          const splitResults = await PDFUtils.splitPDF(files[0].file, { type: 'pages' });
+          let splitOptionsToUse = splitOptions;
           
-          // Download each split PDF
-          splitResults.forEach((pdfBytes, index) => {
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          // Parse custom ranges if provided
+          if (splitOptions.type === 'ranges' && customRanges.trim()) {
+            const ranges = parseRanges(customRanges, files[0].pageCount || 1);
+            if (ranges.length === 0) {
+              toast({
+                title: "Invalid ranges",
+                description: "Please enter valid page ranges (e.g., 1-3, 5-7, 10).",
+                variant: "destructive",
+              });
+              return;
+            }
+            splitOptionsToUse = { ...splitOptions, ranges };
+          }
+          
+          const splitResults = await PDFUtils.splitPDF(files[0].file, splitOptionsToUse);
+          
+          if (splitResults.length === 1) {
+            // Single file - direct download
+            const blob = new Blob([splitResults[0]], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${files[0].file.name.replace('.pdf', '')}_page_${index + 1}.pdf`;
+            a.download = `${files[0].file.name.replace('.pdf', '')}_split.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-          });
+          } else {
+            // Multiple files - create ZIP
+            await downloadAsZip(splitResults, files[0].file.name, splitOptionsToUse);
+          }
           
           toast({
             title: "Success!",
-            description: `PDF split into ${splitResults.length} files. Check your downloads.`,
+            description: `PDF split into ${splitResults.length} files.`,
           });
           
           setProgress(100);
@@ -367,6 +450,65 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
               </div>
             </div>
 
+            {/* Split Options */}
+            {tool === 'split' && (
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-4">Split Options</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div 
+                    className={`split-option-card ${splitOptions.type === 'pages' ? 'active' : ''}`}
+                    onClick={() => setSplitOptions({ type: 'pages' })}
+                  >
+                    <div className="text-center">
+                      <i className="fas fa-file-alt text-2xl text-blue-400 mb-2"></i>
+                      <h4 className="font-semibold text-white mb-1">Every Page</h4>
+                      <p className="text-sm text-gray-300">Split into individual page files</p>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`split-option-card ${splitOptions.type === 'ranges' ? 'active' : ''}`}
+                    onClick={() => setSplitOptions({ type: 'ranges' })}
+                  >
+                    <div className="text-center">
+                      <i className="fas fa-layer-group text-2xl text-purple-400 mb-2"></i>
+                      <h4 className="font-semibold text-white mb-1">Page Ranges</h4>
+                      <p className="text-sm text-gray-300">Specify custom page ranges</p>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`split-option-card ${splitOptions.type === 'bookmarks' ? 'active' : ''}`}
+                    onClick={() => setSplitOptions({ type: 'bookmarks' })}
+                  >
+                    <div className="text-center">
+                      <i className="fas fa-bookmark text-2xl text-green-400 mb-2"></i>
+                      <h4 className="font-semibold text-white mb-1">By Chapters</h4>
+                      <p className="text-sm text-gray-300">Split by bookmarks or every 5 pages</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {splitOptions.type === 'ranges' && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Page Ranges (e.g., 1-3, 5-7, 10)
+                    </label>
+                    <input
+                      type="text"
+                      value={customRanges}
+                      onChange={(e) => setCustomRanges(e.target.value)}
+                      placeholder="1-3, 5-7, 10, 12-15"
+                      className="w-full p-3 bg-muted border border-border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Enter page numbers and ranges separated by commas
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {files.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -382,7 +524,9 @@ export default function PdfEditor({ tool }: PdfEditorProps) {
                   )}
                   {tool === 'split' && files.length > 0 && files[0].pageCount && (
                     <span className="text-sm text-gray-400">
-                      Will create {files[0].pageCount} separate files
+                      {splitOptions.type === 'pages' ? `Will create ${files[0].pageCount} separate files` :
+                       splitOptions.type === 'ranges' ? 'Custom ranges will be used' :
+                       'Will split by bookmarks/chapters'}
                     </span>
                   )}
                 </div>

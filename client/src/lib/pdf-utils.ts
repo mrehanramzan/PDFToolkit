@@ -17,30 +17,51 @@ export class PDFUtils {
     return await mergedPdf.save();
   }
 
-  static async splitPDF(pdfFile: File, splitOptions?: { type: 'pages' | 'ranges', ranges?: { start: number; end: number }[] }): Promise<Uint8Array[]> {
+  static async splitPDF(pdfFile: File, splitOptions?: { type: 'pages' | 'ranges' | 'bookmarks', ranges?: { start: number; end: number }[], everyNPages?: number }): Promise<Uint8Array[]> {
     const arrayBuffer = await pdfFile.arrayBuffer();
     const sourcePdf = await PDFDocument.load(arrayBuffer);
     const totalPages = sourcePdf.getPageCount();
     
-    // If no ranges provided, split into individual pages
-    const ranges = pageRanges || Array.from({ length: totalPages }, (_, i) => ({ start: i + 1, end: i + 1 }));
-    const results: Uint8Array[] = [];
-
-    for (const range of ranges) {
+    let pageRanges: { start: number; end: number }[] = [];
+    
+    if (!splitOptions || splitOptions.type === 'pages') {
+      // Split into individual pages (default)
+      pageRanges = Array.from({ length: totalPages }, (_, i) => ({ start: i + 1, end: i + 1 }));
+    } else if (splitOptions.type === 'ranges' && splitOptions.ranges) {
+      pageRanges = splitOptions.ranges;
+    } else if (splitOptions.type === 'bookmarks') {
+      // Split by chapters (every 5 pages as fallback)
+      const chunkSize = splitOptions.everyNPages || 5;
+      for (let i = 0; i < totalPages; i += chunkSize) {
+        pageRanges.push({
+          start: i + 1,
+          end: Math.min(i + chunkSize, totalPages)
+        });
+      }
+    } else {
+      // Default fallback
+      pageRanges = Array.from({ length: totalPages }, (_, i) => ({ start: i + 1, end: i + 1 }));
+    }
+    
+    const splitPdfs: Uint8Array[] = [];
+    
+    for (const range of pageRanges) {
       const newPdf = await PDFDocument.create();
       const pageIndices = Array.from(
-        { length: Math.min(range.end, totalPages) - range.start + 1 }, 
-        (_, i) => range.start + i - 1
+        { length: range.end - range.start + 1 },
+        (_, i) => range.start - 1 + i
       ).filter(index => index >= 0 && index < totalPages);
       
       if (pageIndices.length > 0) {
-        const pages = await newPdf.copyPages(sourcePdf, pageIndices);
-        pages.forEach((page) => newPdf.addPage(page));
-        results.push(await newPdf.save());
+        const copiedPages = await newPdf.copyPages(sourcePdf, pageIndices);
+        copiedPages.forEach(page => newPdf.addPage(page));
+        
+        const pdfBytes = await newPdf.save();
+        splitPdfs.push(pdfBytes);
       }
     }
-
-    return results;
+    
+    return splitPdfs;
   }
 
   static async rotatePDF(pdfFile: File, angle: number): Promise<Uint8Array> {
