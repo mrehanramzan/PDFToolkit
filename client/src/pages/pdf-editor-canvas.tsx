@@ -38,7 +38,7 @@ export default function PdfEditorCanvas() {
       </div>
 
       {/* PDF Canvas Editor */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden relative">
         <AdvancedPdfEditor onExport={handleExport} />
       </div>
     </div>

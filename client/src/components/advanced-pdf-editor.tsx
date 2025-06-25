@@ -10,7 +10,8 @@ import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { PDFDocument, rgb } from 'pdf-lib';
-import { Download, Upload, Type, Image, Square, Circle, Minus, Move, Trash2, RotateCw, ZoomIn, ZoomOut, Plus } from 'lucide-react';
+import { Download, Upload, Type, Image, Square, Circle, Minus, Move, Trash2, RotateCw, ZoomIn, ZoomOut, Plus, Maximize2, Minimize2 } from 'lucide-react';
+import { PDFRenderer } from '@/lib/pdf-renderer';
 
 interface AdvancedPdfEditorProps {
   onExport?: (pdfBytes: Uint8Array) => void;
@@ -30,6 +31,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -139,8 +141,8 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       const { width: pageWidth, height: pageHeight } = firstPage.getSize();
       
       // Scale to fit canvas while maintaining aspect ratio
-      const maxWidth = 800;
-      const maxHeight = 600;
+      const maxWidth = 900;
+      const maxHeight = 700;
       const scale = Math.min(maxWidth / pageWidth, maxHeight / pageHeight);
       const scaledWidth = pageWidth * scale;
       const scaledHeight = pageHeight * scale;
@@ -166,39 +168,86 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       // Clear existing objects
       canvas.clear();
       
-      // Add page background
-      const pageRect = new Rect({
-        left: 0,
-        top: 0,
-        width: scaledWidth,
-        height: scaledHeight,
-        fill: '#ffffff',
-        stroke: '#e5e5e5',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        excludeFromExport: false
-      });
-      
-      canvas.add(pageRect);
-      if (canvas.sendObjectToBack) {
-        canvas.sendObjectToBack(pageRect);
+      // Render PDF page as background image
+      try {
+        // Create page representation
+        const pageImageUrl = await PDFRenderer.createPageRepresentation(
+          scaledWidth,
+          scaledHeight,
+          1,
+          1
+        );
+        
+        // Add the PDF page as background image
+        const pageImage = await FabricImage.fromURL(pageImageUrl);
+        pageImage.set({
+          left: 0,
+          top: 0,
+          scaleX: 1,
+          scaleY: 1,
+          selectable: false,
+          evented: false,
+          excludeFromExport: false
+        });
+        
+        canvas.add(pageImage);
+        if (canvas.sendObjectToBack) {
+          canvas.sendObjectToBack(pageImage);
+        }
+        
+        // Add page indicator
+        const pageText = new IText(`Page 1 of ${pageCount}`, {
+          left: 20,
+          top: 20,
+          fontSize: 12,
+          fill: '#333333',
+          fontFamily: 'Arial',
+          backgroundColor: 'rgba(255,255,255,0.8)',
+          selectable: false,
+          evented: false,
+          excludeFromExport: true
+        });
+        
+        canvas.add(pageText);
+        canvas.renderAll();
+        
+      } catch (renderError) {
+        console.warn('Could not render PDF page, showing fallback:', renderError);
+        
+        // Fallback: Add basic page background
+        const pageRect = new Rect({
+          left: 0,
+          top: 0,
+          width: scaledWidth,
+          height: scaledHeight,
+          fill: '#ffffff',
+          stroke: '#e5e5e5',
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          excludeFromExport: false
+        });
+        
+        canvas.add(pageRect);
+        if (canvas.sendObjectToBack) {
+          canvas.sendObjectToBack(pageRect);
+        }
+        
+        // Add page indicator
+        const pageText = new IText(`Page 1 of ${pageCount}`, {
+          left: 20,
+          top: 20,
+          fontSize: 12,
+          fill: '#666666',
+          fontFamily: 'Arial',
+          selectable: false,
+          evented: false,
+          excludeFromExport: true
+        });
+        
+        canvas.add(pageText);
+        canvas.renderAll();
       }
-      
-      // Add page indicator
-      const pageText = new IText(`Page 1 of ${pageCount}`, {
-        left: 20,
-        top: 20,
-        fontSize: 12,
-        fill: '#666666',
-        fontFamily: 'Arial',
-        selectable: false,
-        evented: false,
-        excludeFromExport: true
-      });
-      
-      canvas.add(pageText);
-      canvas.renderAll();
 
       toast({
         title: "PDF Loaded Successfully",
@@ -221,7 +270,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
   }, [canvas, toast]);
 
   // Handle page navigation
-  const handlePageChange = useCallback((pageIndex: number) => {
+  const handlePageChange = useCallback(async (pageIndex: number) => {
     if (pageIndex < 0 || pageIndex >= pages.length || !canvas) return;
     
     setCurrentPageIndex(pageIndex);
@@ -229,40 +278,85 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     const currentPage = pages[pageIndex];
     if (!currentPage) return;
     
-    // Clear canvas and add new page background
+    // Clear canvas and load the new page
     canvas.clear();
     
-    const pageRect = new Rect({
-      left: 0,
-      top: 0,
-      width: currentPage.width,
-      height: currentPage.height,
-      fill: '#ffffff',
-      stroke: '#e5e5e5',
-      strokeWidth: 1,
-      selectable: false,
-      evented: false,
-      excludeFromExport: false
-    });
-    
-    canvas.add(pageRect);
-    if (canvas.sendObjectToBack) {
-      canvas.sendObjectToBack(pageRect);
+    // Render the current page
+    try {
+      const pageImageUrl = await PDFRenderer.createPageRepresentation(
+        currentPage.width,
+        currentPage.height,
+        pageIndex + 1,
+        1
+      );
+      
+      const pageImage = await FabricImage.fromURL(pageImageUrl);
+      pageImage.set({
+        left: 0,
+        top: 0,
+        scaleX: 1,
+        scaleY: 1,
+        selectable: false,
+        evented: false,
+        excludeFromExport: false
+      });
+      
+      canvas.add(pageImage);
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(pageImage);
+      }
+      
+      const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length}`, {
+        left: 20,
+        top: 20,
+        fontSize: 12,
+        fill: '#333333',
+        fontFamily: 'Arial',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        selectable: false,
+        evented: false,
+        excludeFromExport: true
+      });
+      
+      canvas.add(pageText);
+      canvas.renderAll();
+      
+    } catch (error) {
+      console.error('Error loading page:', error);
+      
+      // Fallback
+      const pageRect = new Rect({
+        left: 0,
+        top: 0,
+        width: currentPage.width,
+        height: currentPage.height,
+        fill: '#ffffff',
+        stroke: '#e5e5e5',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        excludeFromExport: false
+      });
+      
+      canvas.add(pageRect);
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(pageRect);
+      }
+      
+      const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length}`, {
+        left: 20,
+        top: 20,
+        fontSize: 12,
+        fill: '#666666',
+        fontFamily: 'Arial',
+        selectable: false,
+        evented: false,
+        excludeFromExport: true
+      });
+      
+      canvas.add(pageText);
+      canvas.renderAll();
     }
-    
-    const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length}`, {
-      left: 20,
-      top: 20,
-      fontSize: 12,
-      fill: '#666666',
-      fontFamily: 'Arial',
-      selectable: false,
-      evented: false,
-      excludeFromExport: true
-    });
-    
-    canvas.add(pageText);
-    canvas.renderAll();
   }, [pages, canvas]);
 
   // Add text to canvas
@@ -452,9 +546,9 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
   }, [pdfDocument, canvas, onExport, toast]);
 
   return (
-    <div className="w-full h-full flex bg-slate-900/50">
+    <div className={`w-full h-full flex bg-slate-900/50 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       {/* Left Sidebar */}
-      <div className="w-80 bg-slate-800/80 backdrop-blur-sm border-r border-slate-700 p-4 overflow-y-auto flex-shrink-0">
+      <div className={`bg-slate-800/80 backdrop-blur-sm border-r border-slate-700 p-4 overflow-y-auto flex-shrink-0 ${isFullscreen ? 'w-72' : 'w-80'} ${isFullscreen ? '' : ''}`}>
         <div className="space-y-4">
           {/* File Upload */}
           <Card className="bg-slate-800/70 border-slate-600">
@@ -721,6 +815,17 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
                   className="text-slate-200 border-slate-600"
                 >
                   <ZoomIn className="w-4 h-4" />
+                </Button>
+                
+                <Separator orientation="vertical" className="h-6 bg-slate-600" />
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="text-slate-200 border-slate-600"
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
