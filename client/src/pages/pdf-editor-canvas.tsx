@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import PdfCanvasEditor from "@/components/pdf-canvas-editor";
 import Header from "@/components/header";
-import Footer from "@/components/footer";
 
 export default function PdfEditorCanvas() {
   const [, setLocation] = useLocation();
@@ -44,7 +43,7 @@ export default function PdfEditorCanvas() {
         <PdfCanvasEditor onExport={handleExport} />
       </div>
 
-      <Footer />
+
     </div>
   );
 }

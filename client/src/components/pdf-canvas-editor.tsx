@@ -15,7 +15,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import { Download, Upload, Type, Image, Square, Circle, Minus, Move, Trash2, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 
 // Set PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PdfCanvasEditorProps {
   onExport?: (pdfBytes: Uint8Array) => void;
@@ -93,12 +93,28 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
     const file = event.target.files?.[0];
     if (!file || !canvas) return;
 
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid File",
+        description: "Please select a PDF file",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
       
       // Load with PDF.js for rendering
-      const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const loadingTask = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        cMapUrl: 'https://unpkg.com/pdfjs-dist@4.8.69/cmaps/',
+        cMapPacked: true,
+      });
+      
+      const pdfDoc = await loadingTask.promise;
       setPdfDocument(pdfDoc);
 
       // Load with pdf-lib for editing
@@ -149,13 +165,29 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
+      let errorMessage = "Failed to load PDF file";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('InvalidPDFException')) {
+          errorMessage = "Invalid PDF file. Please select a valid PDF document.";
+        } else if (error.message.includes('MissingPDFException')) {
+          errorMessage = "PDF file appears to be corrupted or empty.";
+        } else if (error.message.includes('UnexpectedResponseException')) {
+          errorMessage = "Unable to process PDF. File may be password protected.";
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to load PDF file",
+        title: "Error Loading PDF",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   }, [canvas, toast]);
 
@@ -170,7 +202,9 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
     canvas.setHeight(page.height);
 
     // Add PDF page as background
-    FabricImage.fromURL(page.originalImageData, (img) => {
+    FabricImage.fromURL(page.originalImageData, {
+      crossOrigin: 'anonymous'
+    }).then((img) => {
       img.set({
         left: 0,
         top: 0,
@@ -181,6 +215,8 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
       canvas.add(img);
       canvas.sendToBack(img);
       canvas.renderAll();
+    }).catch((error) => {
+      console.error('Error loading page image:', error);
     });
   }, [canvas]);
 
@@ -217,7 +253,9 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const imgData = e.target?.result as string;
-      FabricImage.fromURL(imgData, (img) => {
+      FabricImage.fromURL(imgData, {
+        crossOrigin: 'anonymous'
+      }).then((img) => {
         img.set({
           left: 100,
           top: 100,
@@ -227,6 +265,13 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
         canvas.add(img);
         canvas.setActiveObject(img);
         canvas.renderAll();
+      }).catch((error) => {
+        console.error('Error loading image:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load image",
+          variant: "destructive",
+        });
       });
     };
     reader.readAsDataURL(file);
