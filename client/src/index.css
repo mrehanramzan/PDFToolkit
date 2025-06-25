@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(222, 84%, 4.9%);
+  --muted: hsl(210, 40%, 98%);
+  --muted-foreground: hsl(215, 16%, 46.9%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222, 84%, 4.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 84%, 4.9%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --primary: hsl(215, 100%, 37%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(210, 40%, 96%);
+  --secondary-foreground: hsl(222, 84%, 4.9%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(222, 84%, 4.9%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(215, 100%, 37%);
+  --radius: 0.5rem;
+  
+  /* Custom PDF Editor Colors - Premium Theme */
+  --pdf-primary: hsl(222, 100%, 57%); /* Vibrant Blue */
+  --pdf-secondary: hsl(268, 85%, 65%); /* Purple Accent */
+  --pdf-success: hsl(142, 76%, 36%);
+  --pdf-warning: hsl(38, 92%, 50%);
+  --pdf-error: hsl(0, 84%, 60%);
+  --pdf-gradient-start: hsl(222, 100%, 57%);
+  --pdf-gradient-end: hsl(268, 85%, 65%);
+}
+
+.dark {
+  --background: hsl(222, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217, 32%, 17%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --popover: hsl(222, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217, 32%, 17%);
+  --input: hsl(217, 32%, 17%);
+  --primary: hsl(215, 100%, 37%);
+  --primary-foreground: hsl(222, 84%, 4.9%);
+  --secondary: hsl(217, 32%, 17%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(217, 32%, 17%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(215, 100%, 37%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+}
+
+/* Custom PDF Editor Styles */
+.pdf-gradient {
+  background: linear-gradient(135deg, var(--pdf-gradient-start), var(--pdf-gradient-end));
+}
+
+.tool-card {
+  @apply bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-slate-200 hover:border-primary;
+}
+
+.tool-icon {
+  @apply p-3 rounded-lg inline-block mb-4 transition-colors duration-200;
+}
+
+.upload-zone {
+  @apply border-2 border-dashed border-slate-300 rounded-xl p-12 bg-white hover:border-primary hover:bg-blue-50 transition-all duration-200 cursor-pointer;
+}
+
+.upload-zone.dragover {
+  @apply border-primary bg-blue-50;
+  transform: scale(1.02);
+}
+
+.file-item {
+  @apply flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors duration-200;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full border-b-2 border-primary;
+}
+
+/* Font Family Override */
+.font-inter {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(210, 40%, 98%);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(215, 16%, 46.9%);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(215, 100%, 37%);
+}
