@@ -107,6 +107,9 @@ Changelog:
 - June 25, 2025. Implemented comprehensive PDF Canvas Editor with Fabric.js for interactive editing
 - June 25, 2025. Added text, image, and shape editing capabilities with customizable properties
 - June 25, 2025. Integrated PDF.js for rendering and pdf-lib for export functionality
+- June 25, 2025. Created Advanced PDF Editor with simplified PDF processing to avoid worker issues
+- June 25, 2025. Improved scrollbar styling and layout responsiveness for better user experience
+- June 25, 2025. Fixed PDF upload errors by using pdf-lib only approach with enhanced canvas editing
 
 ## User Preferences
 

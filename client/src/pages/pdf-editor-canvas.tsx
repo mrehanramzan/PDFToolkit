@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import PdfCanvasEditor from "@/components/pdf-canvas-editor";
+import AdvancedPdfEditor from "@/components/advanced-pdf-editor";
 import Header from "@/components/header";
 
 export default function PdfEditorCanvas() {
@@ -39,7 +39,7 @@ export default function PdfEditorCanvas() {
 
       {/* PDF Canvas Editor */}
       <div className="flex-1 overflow-hidden">
-        <PdfCanvasEditor onExport={handleExport} />
+        <AdvancedPdfEditor onExport={handleExport} />
       </div>
     </div>
   );
