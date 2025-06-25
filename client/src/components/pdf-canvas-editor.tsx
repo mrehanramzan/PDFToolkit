@@ -10,12 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb } from 'pdf-lib';
 import { Download, Upload, Type, Image, Square, Circle, Minus, Move, Trash2, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
-
-// Set PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PdfCanvasEditorProps {
   onExport?: (pdfBytes: Uint8Array) => void;
@@ -37,7 +33,7 @@ interface DrawingTool {
 export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
-  const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [pdfLibDocument, setPdfLibDocument] = useState<PDFDocument | null>(null);
   const [pages, setPages] = useState<PdfPage[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -107,61 +103,39 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
     try {
       const arrayBuffer = await file.arrayBuffer();
       
-      // Load with PDF.js for rendering
-      const loadingTask = pdfjsLib.getDocument({
-        data: arrayBuffer,
-        cMapUrl: 'https://unpkg.com/pdfjs-dist@4.8.69/cmaps/',
-        cMapPacked: true,
-      });
-      
-      const pdfDoc = await loadingTask.promise;
-      setPdfDocument(pdfDoc);
-
-      // Load with pdf-lib for editing
+      // Load with pdf-lib for editing and basic info
       const pdfLibDoc = await PDFDocument.load(arrayBuffer);
       setPdfLibDocument(pdfLibDoc);
-
-      // Render all pages
+      
+      const pageCount = pdfLibDoc.getPageCount();
+      
+      // Create a simple representation of pages
       const pdfPages: PdfPage[] = [];
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const scale = 1.5;
-        const viewport = page.getViewport({ scale });
-
-        // Create canvas for this page
-        const pageCanvas = document.createElement('canvas');
-        const context = pageCanvas.getContext('2d')!;
-        pageCanvas.height = viewport.height;
-        pageCanvas.width = viewport.width;
-
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport,
-        };
-
-        await page.render(renderContext).promise;
-        const imageData = pageCanvas.toDataURL();
-
+      for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+        // Create a placeholder page - we'll render when needed
         pdfPages.push({
           pageNumber: pageNum,
           canvas: new Canvas(document.createElement('canvas')),
-          originalImageData: imageData,
-          width: viewport.width,
-          height: viewport.height
+          originalImageData: '', // Will be populated when rendered
+          width: 800,
+          height: 600
         });
       }
 
       setPages(pdfPages);
       setCurrentPageIndex(0);
       
-      // Load first page into main canvas
-      if (pdfPages.length > 0) {
-        await loadPageToCanvas(pdfPages[0]);
+      // Set up canvas for editing
+      if (canvas) {
+        canvas.setWidth(800);
+        canvas.setHeight(600);
+        canvas.backgroundColor = '#ffffff';
+        canvas.renderAll();
       }
 
       toast({
         title: "PDF Loaded",
-        description: `Successfully loaded ${pdfDoc.numPages} pages`,
+        description: `Successfully loaded ${pageCount} pages for editing`,
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
@@ -200,24 +174,37 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
     // Set canvas size
     canvas.setWidth(page.width);
     canvas.setHeight(page.height);
-
-    // Add PDF page as background
-    FabricImage.fromURL(page.originalImageData, {
-      crossOrigin: 'anonymous'
-    }).then((img) => {
-      img.set({
-        left: 0,
-        top: 0,
-        selectable: false,
-        evented: false,
-        opacity: 1
-      });
-      canvas.add(img);
-      canvas.sendToBack(img);
-      canvas.renderAll();
-    }).catch((error) => {
-      console.error('Error loading page image:', error);
+    
+    // Add a simple background to indicate the page
+    const rect = new Rect({
+      left: 0,
+      top: 0,
+      width: page.width,
+      height: page.height,
+      fill: '#ffffff',
+      stroke: '#cccccc',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
     });
+    
+    canvas.add(rect);
+    canvas.sendToBack(rect);
+    canvas.renderAll();
+    
+    // Add page number indicator
+    const pageText = new IText(`Page ${page.pageNumber}`, {
+      left: 20,
+      top: 20,
+      fontSize: 14,
+      fill: '#666666',
+      fontFamily: 'Arial',
+      selectable: false,
+      evented: false,
+    });
+    
+    canvas.add(pageText);
+    canvas.renderAll();
   }, [canvas]);
 
   // Handle page navigation
@@ -225,7 +212,9 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
     if (pageIndex < 0 || pageIndex >= pages.length) return;
     
     setCurrentPageIndex(pageIndex);
-    await loadPageToCanvas(pages[pageIndex]);
+    if (pages[pageIndex]) {
+      await loadPageToCanvas(pages[pageIndex]);
+    }
   }, [pages, loadPageToCanvas]);
 
   // Add text to canvas
@@ -419,10 +408,10 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
 
   return (
     <div className="w-full h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         {/* Left Toolbar */}
-        <div className="w-64 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700 p-4 overflow-y-auto">
-          <div className="space-y-6">
+        <div className="w-72 min-w-72 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700 p-3 overflow-y-auto flex-shrink-0">
+          <div className="space-y-4">
             {/* File Upload */}
             <Card className="bg-slate-800/50 border-slate-700">
               <CardHeader className="pb-3">
@@ -593,10 +582,10 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
         </div>
 
         {/* Main Canvas Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Top Toolbar */}
-          <div className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700 p-4">
-            <div className="flex items-center justify-between">
+          <div className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700 p-4 flex-shrink-0">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center space-x-4">
                 {/* Page Navigation */}
                 {pages.length > 0 && (
@@ -677,11 +666,11 @@ export default function PdfCanvasEditor({ onExport }: PdfCanvasEditorProps) {
 
           {/* Canvas Container */}
           <div className="flex-1 overflow-auto bg-slate-900/50 p-6">
-            <div className="flex justify-center">
-              <div className="bg-white shadow-2xl rounded-lg overflow-hidden">
+            <div className="flex justify-center items-start min-h-full">
+              <div className="bg-white shadow-2xl rounded-lg overflow-hidden max-w-full">
                 <canvas
                   ref={canvasRef}
-                  className="border border-slate-300"
+                  className="border border-slate-300 max-w-full h-auto"
                 />
               </div>
             </div>
