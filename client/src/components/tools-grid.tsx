@@ -1,4 +1,5 @@
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface Tool {
   id: string;
@@ -197,12 +198,20 @@ const tools: Tool[] = [
 
 export default function ToolsGrid() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleToolClick = (tool: Tool) => {
-    toast({
-      title: `${tool.name} Tool`,
-      description: `${tool.name} functionality will be implemented soon.`,
-    });
+    // Navigate to PDF editor for implemented tools
+    const implementedTools = ['merge', 'split', 'compress', 'rotate', 'watermark', 'pdf-to-jpg'];
+    
+    if (implementedTools.includes(tool.id)) {
+      setLocation(`/editor/${tool.id}`);
+    } else {
+      toast({
+        title: `${tool.name} Tool`,
+        description: `${tool.name} functionality will be available soon.`,
+      });
+    }
   };
 
   const coreTools = tools.filter(tool => tool.category === 'core');
@@ -212,7 +221,7 @@ export default function ToolsGrid() {
     <>
       {/* Core Tools */}
       <section className="mb-12">
-        <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">
+        <h3 className="text-3xl font-bold text-foreground mb-8 text-center">
           PDF Tools & Features
         </h3>
         
@@ -237,7 +246,7 @@ export default function ToolsGrid() {
 
       {/* Advanced Tools */}
       <section className="mb-12">
-        <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">
+        <h3 className="text-3xl font-bold text-foreground mb-8 text-center">
           Advanced Features
         </h3>
         

@@ -98,6 +98,9 @@ Changelog:
 - June 25, 2025. Initial setup - Created comprehensive PDF editor with React frontend
 - June 25, 2025. Updated branding to DocuCraft with premium color theme
 - June 25, 2025. Fixed CSS compilation errors and added FontAwesome icons
+- June 25, 2025. Implemented dark theme with Poppins font and premium gradient design
+- June 25, 2025. Created PDF processing functionality with merge, split, compress, rotate, watermark features
+- June 25, 2025. Added PDF editor page with routing and client-side PDF processing using pdf-lib
 
 ## User Preferences
 

@@ -105,22 +105,26 @@ export default function FileUploadZone({
     >
       <input {...getInputProps()} />
       <div className="text-center">
-        <i className="fas fa-cloud-upload-alt text-5xl text-slate-400 mb-4"></i>
-        <h3 className="text-xl font-semibold text-slate-900 mb-2">
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-full inline-block mb-4 shadow-lg">
+            <i className="fas fa-cloud-upload-alt text-4xl"></i>
+          </div>
+        </div>
+        <h3 className="text-2xl font-semibold text-foreground mb-2">
           {isDragActive ? 'Drop your PDF here' : 'Drop your PDF files here'}
         </h3>
-        <p className="text-slate-600 mb-4">
+        <p className="text-muted-foreground mb-6">
           or click to browse from your device
         </p>
         <Button 
-          className="bg-primary text-white hover:bg-blue-700 font-medium"
+          className="gradient-button text-white font-medium shadow-lg px-8 py-3"
           disabled={isUploading}
         >
           <i className="fas fa-plus mr-2"></i>
           {isUploading ? 'Uploading...' : 'Select Files'}
         </Button>
-        <p className="text-sm text-slate-500 mt-4">
-          Supports PDF files up to 100MB • Secure & Private
+        <p className="text-sm text-muted-foreground mt-6">
+          Supports PDF files up to 100MB • <span className="text-green-400">Secure & Private</span>
         </p>
       </div>
     </div>

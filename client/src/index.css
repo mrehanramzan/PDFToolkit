@@ -1,54 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(222, 84%, 4.9%);
-  --muted: hsl(210, 40%, 98%);
-  --muted-foreground: hsl(215, 16%, 46.9%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(222, 84%, 4.9%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(222, 84%, 4.9%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --primary: hsl(215, 100%, 37%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(210, 40%, 96%);
-  --secondary-foreground: hsl(222, 84%, 4.9%);
-  --accent: hsl(210, 40%, 96%);
-  --accent-foreground: hsl(222, 84%, 4.9%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(215, 100%, 37%);
-  --radius: 0.5rem;
-  
-  /* Custom PDF Editor Colors - Premium Theme */
-  --pdf-primary: hsl(222, 100%, 57%); /* Vibrant Blue */
-  --pdf-secondary: hsl(268, 85%, 65%); /* Purple Accent */
-  --pdf-success: hsl(142, 76%, 36%);
-  --pdf-warning: hsl(38, 92%, 50%);
-  --pdf-error: hsl(0, 84%, 60%);
-  --pdf-gradient-start: hsl(222, 100%, 57%);
-  --pdf-gradient-end: hsl(268, 85%, 65%);
-}
-
-.dark {
+  /* Dark Theme - Primary Colors */
   --background: hsl(222, 84%, 4.9%);
   --foreground: hsl(210, 40%, 98%);
   --muted: hsl(217, 32%, 17%);
   --muted-foreground: hsl(215, 20%, 65%);
   --popover: hsl(222, 84%, 4.9%);
   --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(222, 84%, 4.9%);
+  --card: hsl(220, 13%, 9%);
   --card-foreground: hsl(210, 40%, 98%);
   --border: hsl(217, 32%, 17%);
   --input: hsl(217, 32%, 17%);
-  --primary: hsl(215, 100%, 37%);
+  --primary: hsl(222, 100%, 57%);
   --primary-foreground: hsl(222, 84%, 4.9%);
   --secondary: hsl(217, 32%, 17%);
   --secondary-foreground: hsl(210, 40%, 98%);
@@ -56,7 +25,37 @@
   --accent-foreground: hsl(210, 40%, 98%);
   --destructive: hsl(0, 63%, 31%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(215, 100%, 37%);
+  --ring: hsl(222, 100%, 57%);
+  --radius: 0.75rem;
+  
+  /* Premium Dark Theme Colors */  
+  --pdf-primary: hsl(222, 100%, 57%); /* Electric Blue */
+  --pdf-secondary: hsl(268, 85%, 65%); /* Purple Magic */
+  --pdf-accent: hsl(305, 100%, 45%); /* Magenta Accent */
+  --pdf-success: hsl(142, 76%, 46%);
+  --pdf-warning: hsl(38, 92%, 60%);
+  --pdf-error: hsl(0, 84%, 70%);
+  --pdf-gradient-start: hsl(222, 100%, 57%);
+  --pdf-gradient-end: hsl(268, 85%, 65%);
+  --pdf-gradient-accent: hsl(305, 100%, 45%);
+  
+  /* Surface Colors */
+  --surface-1: hsl(220, 13%, 9%);
+  --surface-2: hsl(220, 13%, 12%);
+  --surface-3: hsl(220, 13%, 15%);
+  --surface-hover: hsl(220, 13%, 18%);
+}
+
+/* Light theme overrides (optional) */
+.light {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(222, 84%, 4.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 84%, 4.9%);
+  --surface-1: hsl(0, 0%, 100%);
+  --surface-2: hsl(210, 40%, 98%);
+  --surface-3: hsl(210, 40%, 96%);
+  --surface-hover: hsl(210, 40%, 94%);
 }
 
 @layer base {
@@ -65,34 +64,68 @@
   }
 
   body {
-    @apply bg-background text-foreground font-inter antialiased;
+    @apply bg-background text-foreground font-poppins antialiased;
+    background: linear-gradient(135deg, hsl(222, 84%, 4.9%) 0%, hsl(220, 13%, 9%) 100%);
+    min-height: 100vh;
   }
 }
 
-/* Custom PDF Editor Styles */
+/* Custom PDF Editor Styles - Dark Theme */
 .pdf-gradient {
   background: linear-gradient(135deg, var(--pdf-gradient-start), var(--pdf-gradient-end));
 }
 
+.pdf-gradient-3 {
+  background: linear-gradient(135deg, var(--pdf-gradient-start), var(--pdf-gradient-accent), var(--pdf-gradient-end));
+}
+
 .tool-card {
-  @apply bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-slate-200 hover:border-primary;
+  @apply rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border hover:border-primary;
+  background: var(--surface-1);
+  border-color: var(--border);
+  backdrop-filter: blur(10px);
+}
+
+.tool-card:hover {
+  background: var(--surface-hover);
+  transform: translateY(-2px);
 }
 
 .tool-icon {
-  @apply p-3 rounded-lg inline-block mb-4 transition-colors duration-200;
+  @apply p-3 rounded-lg inline-block mb-4 transition-all duration-300;
+  background: linear-gradient(135deg, var(--pdf-primary), var(--pdf-secondary));
+  color: white;
 }
 
 .upload-zone {
-  @apply border-2 border-dashed border-slate-300 rounded-xl p-12 bg-white hover:border-primary hover:bg-blue-50 transition-all duration-200 cursor-pointer;
+  @apply border-2 border-dashed rounded-xl p-12 transition-all duration-300 cursor-pointer;
+  background: var(--surface-1);
+  border-color: var(--border);
+  backdrop-filter: blur(10px);
+}
+
+.upload-zone:hover {
+  border-color: var(--pdf-primary);
+  background: var(--surface-hover);
+  box-shadow: 0 0 30px rgba(34, 100, 255, 0.1);
 }
 
 .upload-zone.dragover {
-  @apply border-primary bg-blue-50;
+  border-color: var(--pdf-primary);
+  background: var(--surface-hover);
   transform: scale(1.02);
+  box-shadow: 0 0 40px rgba(34, 100, 255, 0.2);
 }
 
 .file-item {
-  @apply flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors duration-200;
+  @apply flex items-center justify-between p-4 border rounded-lg transition-all duration-200;
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+.file-item:hover {
+  background: var(--surface-hover);
+  border-color: var(--pdf-primary);
 }
 
 .loading-spinner {
@@ -100,8 +133,27 @@
 }
 
 /* Font Family Override */
-.font-inter {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+.font-poppins {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Hero Section Styles */
+.hero-background {
+  background: radial-gradient(circle at 20% 50%, rgba(120, 100, 250, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255, 100, 200, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 40% 80%, rgba(34, 100, 255, 0.1) 0%, transparent 50%);
+}
+
+/* Animated background */
+.animated-bg {
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Smooth animations */
@@ -120,14 +172,58 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: hsl(210, 40%, 98%);
+  background: var(--muted);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(215, 16%, 46.9%);
+  background: var(--muted-foreground);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(215, 100%, 37%);
+  background: var(--primary);
+}
+
+/* Tool hover effects */
+.tool-card:hover .tool-icon {
+  transform: scale(1.1);
+  box-shadow: 0 10px 30px rgba(34, 100, 255, 0.3);
+}
+
+/* Button hover animations */
+.gradient-button {
+  background: linear-gradient(135deg, var(--pdf-primary), var(--pdf-secondary));
+  transition: all 0.3s ease;
+}
+
+.gradient-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(34, 100, 255, 0.3);
+}
+
+/* Floating animation for background elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Progress bar animation */
+@keyframes progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+.progress-animate {
+  animation: progress 2s ease-in-out;
 }
