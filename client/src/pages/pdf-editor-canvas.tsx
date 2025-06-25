@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
 import AdvancedPdfEditor from "@/components/advanced-pdf-editor";
 import Header from "@/components/header";
 
