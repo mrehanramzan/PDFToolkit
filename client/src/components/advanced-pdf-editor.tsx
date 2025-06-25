@@ -168,20 +168,20 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       // Clear existing objects
       canvas.clear();
       
-      // Render actual PDF page content
+      // Render PDF page content
       try {
         console.log('Rendering PDF page content...');
         
-        // Convert PDF to image using PDF.js
+        // Create document representation
         const pageImageUrl = await PDFRenderer.convertPdfDocToImage(
           pdfDoc,
           0, // First page
-          Math.min(scaledWidth / pageWidth, scaledHeight / pageHeight) // Proper scale
+          1.0 // Base scale
         );
         
         console.log('PDF page rendered successfully');
         
-        // Add the actual PDF page as background image
+        // Add the PDF page as background image
         const pageImage = await FabricImage.fromURL(pageImageUrl);
         pageImage.set({
           left: 0,
@@ -199,14 +199,14 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         }
         
         // Add page indicator overlay
-        const pageText = new IText(`Page 1 of ${pageCount}`, {
+        const pageText = new IText(`Page 1 of ${pageCount} - Ready to Edit`, {
           left: 15,
           top: 15,
           fontSize: 11,
-          fill: '#333333',
+          fill: '#059669',
           fontFamily: 'Arial',
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          padding: 5,
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          padding: 8,
           selectable: false,
           evented: false,
           excludeFromExport: true
@@ -218,40 +218,36 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         console.log('PDF page added to canvas successfully');
         
       } catch (renderError) {
-        console.error('Could not render actual PDF content:', renderError);
+        console.error('Could not render PDF content:', renderError);
         
-        // Fallback: Create a document-like placeholder
-        const pageImageUrl = PDFRenderer.createPagePlaceholder(
-          scaledWidth,
-          scaledHeight,
-          1,
-          1
-        );
-        
-        const pageImage = await FabricImage.fromURL(pageImageUrl);
-        pageImage.set({
+        // Simple fallback
+        const pageRect = new Rect({
           left: 0,
           top: 0,
-          scaleX: 1,
-          scaleY: 1,
+          width: scaledWidth,
+          height: scaledHeight,
+          fill: '#ffffff',
+          stroke: '#e5e5e5',
+          strokeWidth: 2,
           selectable: false,
           evented: false,
           excludeFromExport: false
         });
         
-        canvas.add(pageImage);
+        canvas.add(pageRect);
         if (canvas.sendObjectToBack) {
-          canvas.sendObjectToBack(pageImage);
+          canvas.sendObjectToBack(pageRect);
         }
         
-        // Add error indicator
-        const errorText = new IText('PDF loaded - placeholder view', {
+        // Error indicator
+        const errorText = new IText('PDF Loaded - Basic Mode', {
           left: 20,
           top: 20,
           fontSize: 12,
-          fill: '#666666',
+          fill: '#dc2626',
           fontFamily: 'Arial',
-          backgroundColor: 'rgba(255,255,255,0.8)',
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          padding: 8,
           selectable: false,
           evented: false,
           excludeFromExport: true
@@ -293,16 +289,16 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     // Clear canvas and load the new page
     canvas.clear();
     
-    // Render the current page with actual PDF content
+    // Render the current page
     try {
       if (pdfDocument) {
         console.log(`Rendering page ${pageIndex + 1}...`);
         
-        // Get actual PDF content for this page
+        // Get page content representation
         const pageImageUrl = await PDFRenderer.convertPdfDocToImage(
           pdfDocument,
           pageIndex,
-          Math.min(currentPage.width / currentPage.width, currentPage.height / currentPage.height)
+          1.0
         );
         
         const pageImage = await FabricImage.fromURL(pageImageUrl);
@@ -321,14 +317,14 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
           canvas.sendObjectToBack(pageImage);
         }
         
-        const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length}`, {
+        const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length} - Ready to Edit`, {
           left: 15,
           top: 15,
           fontSize: 11,
-          fill: '#333333',
+          fill: '#059669',
           fontFamily: 'Arial',
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          padding: 5,
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          padding: 8,
           selectable: false,
           evented: false,
           excludeFromExport: true
@@ -338,35 +334,30 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         canvas.renderAll();
         
       } else {
-        // No PDF document available, show placeholder
-        const pageImageUrl = PDFRenderer.createPagePlaceholder(
-          currentPage.width,
-          currentPage.height,
-          pageIndex + 1,
-          1
-        );
-        
-        const pageImage = await FabricImage.fromURL(pageImageUrl);
-        pageImage.set({
+        // No PDF document, show basic page
+        const pageRect = new Rect({
           left: 0,
           top: 0,
-          scaleX: 1,
-          scaleY: 1,
+          width: currentPage.width,
+          height: currentPage.height,
+          fill: '#ffffff',
+          stroke: '#e5e5e5',
+          strokeWidth: 2,
           selectable: false,
           evented: false,
           excludeFromExport: false
         });
         
-        canvas.add(pageImage);
+        canvas.add(pageRect);
         if (canvas.sendObjectToBack) {
-          canvas.sendObjectToBack(pageImage);
+          canvas.sendObjectToBack(pageRect);
         }
         
         const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length}`, {
           left: 20,
           top: 20,
           fontSize: 12,
-          fill: '#333333',
+          fill: '#666666',
           fontFamily: 'Arial',
           backgroundColor: 'rgba(255,255,255,0.8)',
           selectable: false,
