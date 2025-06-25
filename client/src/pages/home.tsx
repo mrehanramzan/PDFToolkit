@@ -5,7 +5,7 @@ import ToolsGrid from "@/components/tools-grid";
 import RecentFiles from "@/components/recent-files";
 import Footer from "@/components/footer";
 import LoadingOverlay from "@/components/loading-overlay";
-import FeatureShowcase from "@/components/feature-showcase";
+
 
 
 export default function Home() {
@@ -43,8 +43,7 @@ export default function Home() {
         {/* Tools Section */}
         <ToolsGrid />
 
-        {/* Feature Showcase */}
-        <FeatureShowcase />
+
 
         {/* Recent Files */}
         <RecentFiles />

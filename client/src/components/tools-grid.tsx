@@ -233,11 +233,11 @@ export default function ToolsGrid() {
               onClick={() => handleToolClick(tool)}
             >
               <div className="text-center">
-                <div className={`tool-icon ${tool.bgColor} ${tool.textColor}`}>
+                <div className="tool-icon">
                   <i className={`${tool.icon} text-2xl`}></i>
                 </div>
-                <h4 className="font-semibold text-slate-900 mb-2">{tool.name}</h4>
-                <p className="text-sm text-slate-600">{tool.description}</p>
+                <h4 className="font-semibold text-white mb-2">{tool.name}</h4>
+                <p className="text-sm text-gray-300">{tool.description}</p>
               </div>
             </div>
           ))}
@@ -258,11 +258,11 @@ export default function ToolsGrid() {
               onClick={() => handleToolClick(tool)}
             >
               <div className="text-center">
-                <div className={`tool-icon ${tool.bgColor} ${tool.textColor}`}>
+                <div className="tool-icon">
                   <i className={`${tool.icon} text-2xl`}></i>
                 </div>
-                <h4 className="font-semibold text-slate-900 mb-2">{tool.name}</h4>
-                <p className="text-sm text-slate-600">{tool.description}</p>
+                <h4 className="font-semibold text-white mb-2">{tool.name}</h4>
+                <p className="text-sm text-gray-300">{tool.description}</p>
               </div>
             </div>
           ))}

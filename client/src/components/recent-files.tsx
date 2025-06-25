@@ -110,7 +110,7 @@ export default function RecentFiles() {
   return (
     <section className="mb-12">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-bold text-slate-900">Recent Files</h3>
+        <h3 className="text-3xl font-bold text-white">Recent Files</h3>
         <Button variant="ghost" className="text-blue-400 hover:text-blue-300 font-medium">
           View All
         </Button>
