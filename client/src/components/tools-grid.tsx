@@ -41,9 +41,9 @@ const tools: Tool[] = [
     category: 'core'
   },
   {
-    id: 'edit',
-    name: 'Edit PDF',
-    description: 'Add text, images, and shapes to your PDF',
+    id: 'canvas-editor',
+    name: 'PDF Canvas Editor',
+    description: 'Edit PDFs with text, images, and interactive shapes',
     icon: 'fas fa-edit',
     bgColor: 'bg-purple-100 group-hover:bg-purple-200',
     textColor: 'text-purple-600',
@@ -201,6 +201,11 @@ export default function ToolsGrid() {
   const [, setLocation] = useLocation();
 
   const handleToolClick = (tool: Tool) => {
+    if (tool.id === 'canvas-editor') {
+      setLocation('/canvas-editor');
+      return;
+    }
+    
     // Navigate to PDF editor for implemented tools
     const implementedTools = ['merge', 'split', 'compress', 'rotate', 'watermark', 'pdf-to-jpg'];
     

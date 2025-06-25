@@ -104,6 +104,9 @@ Changelog:
 - June 25, 2025. Enhanced merge PDF functionality with file preview showing page count and size
 - June 25, 2025. Implemented split PDF functionality that creates individual page files
 - June 25, 2025. Added file reordering, removal, and proper validation across all PDF tools
+- June 25, 2025. Implemented comprehensive PDF Canvas Editor with Fabric.js for interactive editing
+- June 25, 2025. Added text, image, and shape editing capabilities with customizable properties
+- June 25, 2025. Integrated PDF.js for rendering and pdf-lib for export functionality
 
 ## User Preferences
 

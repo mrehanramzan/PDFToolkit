@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import PdfEditor from "@/pages/pdf-editor";
-import AdvancedPdfEditor from "@/pages/advanced-pdf-editor";
+import PdfEditorCanvas from "@/pages/pdf-editor-canvas";
 
 function Router() {
   return (
@@ -15,7 +15,7 @@ function Router() {
       <Route path="/editor/:tool">
         {(params) => <PdfEditor tool={params.tool} />}
       </Route>
-      <Route path="/advanced-editor" component={AdvancedPdfEditor} />
+      <Route path="/canvas-editor" component={PdfEditorCanvas} />
       <Route component={NotFound} />
     </Switch>
   );
