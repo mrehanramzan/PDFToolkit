@@ -56,7 +56,18 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     const fabricCanvas = new Canvas(canvasRef.current, {
       width: 800,
       height: 600,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      selection: true,
+      preserveObjectStacking: true
+    });
+
+    // Add canvas event listeners
+    fabricCanvas.on('selection:created', () => {
+      console.log('Object selected');
+    });
+
+    fabricCanvas.on('selection:cleared', () => {
+      console.log('Selection cleared');
     });
 
     setCanvas(fabricCanvas);
@@ -166,10 +177,13 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         strokeWidth: 1,
         selectable: false,
         evented: false,
+        excludeFromExport: false
       });
       
       canvas.add(pageRect);
-      canvas.sendToBack(pageRect);
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(pageRect);
+      }
       
       // Add page indicator
       const pageText = new IText(`Page 1 of ${pageCount}`, {
@@ -180,6 +194,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
         fontFamily: 'Arial',
         selectable: false,
         evented: false,
+        excludeFromExport: true
       });
       
       canvas.add(pageText);
@@ -227,10 +242,13 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       strokeWidth: 1,
       selectable: false,
       evented: false,
+      excludeFromExport: false
     });
     
     canvas.add(pageRect);
-    canvas.sendToBack(pageRect);
+    if (canvas.sendObjectToBack) {
+      canvas.sendObjectToBack(pageRect);
+    }
     
     const pageText = new IText(`Page ${pageIndex + 1} of ${pages.length}`, {
       left: 20,
@@ -240,6 +258,7 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       fontFamily: 'Arial',
       selectable: false,
       evented: false,
+      excludeFromExport: true
     });
     
     canvas.add(pageText);
@@ -271,7 +290,9 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
     const reader = new FileReader();
     reader.onload = (e) => {
       const imgData = e.target?.result as string;
-      FabricImage.fromURL(imgData).then((img) => {
+      FabricImage.fromURL(imgData, {
+        crossOrigin: 'anonymous'
+      }).then((img) => {
         img.set({
           left: 100,
           top: 100,
@@ -291,6 +312,9 @@ export default function AdvancedPdfEditor({ onExport }: AdvancedPdfEditorProps) 
       });
     };
     reader.readAsDataURL(file);
+    
+    // Clear the input value
+    event.target.value = '';
   }, [canvas, toast]);
 
   // Add shapes
